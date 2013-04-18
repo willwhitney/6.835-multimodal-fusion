@@ -1,0 +1,69 @@
+function [chmm] = make_chmm(N,Q,X) 
+    assert( N == size(Q,2), 'Q must be in the size of [1 N]' );
+    assert( N == size(X,2), 'X must be in the size of [1 N]' );
+    
+%     chmm = mk_chmm(N,Q, X);
+    
+
+%{ 
+    My version. Might work.
+    sliceSize = N * 2;
+    
+    intra = zeros(sliceSize);
+    intra(1, 3) = 1;
+    intra(2, 4) = 1;
+    
+    inter = zeros(sliceSize);
+    inter(1, [1 2]) = 1;
+    inter(2, [1 2]) = 1;
+    
+    observedNodes = [3 4];
+    hiddenNodes = [3 4];
+    
+    ns = [Q X];
+    
+    chmm = mk_dbn(intra, inter, ns)
+%}
+
+    % Modified from mk_chmm.m
+    ss = N*2;
+    hnodes = 1:N;
+    onodes = (1:N)+N;
+
+    intra = zeros(ss);
+    for i=1:N
+        intra(hnodes(i), onodes(i))=1;
+    end
+
+    inter = zeros(ss);
+    for i=1:N
+        inter(i, max(i-1,1):min(i+1,N))=1;
+    end
+    
+    ns = [Q X]; 
+
+    eclass1 = [hnodes onodes];
+    eclass2 = [hnodes+ss onodes];
+    
+    dnodes = hnodes;
+    
+    chmm = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'eclass1', eclass1, 'eclass2', eclass2, ...
+        'observed', onodes);
+    
+    for i=hnodes(:)'
+        chmm.CPD{i} = tabular_CPD(chmm, i);
+    end
+    for i=onodes(:)'
+        chmm.CPD{i} = gaussian_CPD(chmm, i);
+    end
+    for i=hnodes(:)'+ss
+        chmm.CPD{i} = tabular_CPD(chmm, i);
+    end
+
+
+
+
+%     if ~exist(chmm,'var')
+%         error('Implement make_chmm (inside trainCHMM.m)');
+%     end
+end
