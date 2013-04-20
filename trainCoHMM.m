@@ -17,7 +17,55 @@
 function [ cohmm ] = trainCoHMM( seqs, labels, useqs, params ) 
     RandStream.setGlobalStream(...
         RandStream('mt19937ar', 'seed', params.randSeed));
+    
+    for iteration = 1:params.maxiter_cotrain
+        body_seqs = cellfun(@(x) x(params.featureMap{1},:), seqs, 'UniformOutput', false);
+        hand_seqs = cellfun(@(x) x(params.featureMap{2},:), seqs, 'UniformOutput', false);
+        bodyHMM = experiment_early_hmm(body_seqs, params);
+        handHMM = experiment_early_hmm(hand_seqs, params);
 
+        [bodyYstar, bodyLL] = testHMM(bodyHMM, body_seqs);
+        [handYstar, handLL] = testHMM(handHMM, hand_seqs);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    end
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if ~exist(cohmm,'var')
         error('Implement trainCoHMM.m');
     end

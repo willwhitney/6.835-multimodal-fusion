@@ -10,6 +10,8 @@ Using body features, I obtained a classification accuracy of 0.606250 with param
 
 Using hand features, the maximum classification accuracy was 0.642708, with `H=8, G=2`. This result was also obtained using the given grid search methodology.
 
+For both of these tests, all combinations of the parameters `H = {8, 4, 12}` and `G = {1, 3}` were tested.
+
 **Question 2**: For each experiment, the run.m script will automatically generate a confusion matrix for the best performing model. Submit and interpret the two confusion matrices you obtained: For each modality explain which pairs of gestures are confused the most and *why* you think they were. See the gesture pairs in Figure 1 and use them in explaining the *why*.
 
 ![](/Users/will/Dropbox/MIT/6.835/miniproject4/body_only.png)
@@ -27,20 +29,41 @@ Confusion between gestures 4 and 2, and gestures 3 and 1, makes perfect sense; t
 
 **Question 3**: Follow the steps in Part 2a. What is the best classification accuracy you obtained using early fusion HMM? What parameter values did you try and what was your strategy for finding the best parameter value?
 
-
-
+The early fusion HMM achieved an accuracy of 0.872917 with the parameters `H = 8` and `G = 1`. I found this value using the grid search method implemented in `run.m`, which tested `H = {8, 4, 12}` and `G = {1, 3}`. 
 
 **Question 4**: Implement testLateHMM.m to perform late fusion, and explain your implementation with pseudocode in your writeup. Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function experiment late hmm.m.
+
+	Given:
+	- the data, `seqs`
+	- ground truth `labels`
+	- the body and hand HMMs as `hmm{1, 2}`
+	- the `featureMap` of which features go with which HMMs
+	- the `weightsMV`, a list of weightings to try
+	
+	Calculate the log-likelihoods for each option on each gesture for just the body HMM and body data
+	Calculate the log-likelihoods for each option on each gesture for just the hand HMM and hand data
+	
+	For each weighting in `weightsMV`:
+		For each sample in `seqs`:
+			Compute the weighted average of the likelihoods given by body and hand for each of the six possible interpretations 
+			Select the most likely interpretation and store it in `stat`
+			
+		Determine the percentage of 
+			
+	
 
 **Question 5**: Follow the steps in Part 2b. What is the best classification accuracy you can get using late fusion HMM? What parameter values did you validate and what was your strategy for finding the best parameter value? Which weight value tends to give you the best performance in terms of the classification accuracy? Why do you think that weight value give the best result?
 [Late HMM] accuracy=0.846875 (H=[12 8],G=[3 2],W=[0.50 0.50])**Question 6**: Describe the differences between early and late fusion algorithms in terms of the underlying assumptions, how the classifiers are trained and then used to test new samples.
 **Question 7**: Submit and interpret the two confusion matrices you obtained (both from early fusion and late fusion). Which approach (early versus late) performed better? Pick the confusion matrix that performed better and compare it to the two confusion matrices you obtained in Question 2. What differences do you see? Do you see a better classification accuracy on those gesture pairs that were confused the most in unimodal approach? Why do you think the performance has improved?
-**Question 8**: Implement the function `chmm = make_chmm(N,Q,X)` (located inside trainCHMM.m) that generates the graph structure of a coupled HMM. Explain your implementation with pseudocode in your writeup. Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function trainCHMM.m.
+![](/Users/will/Dropbox/MIT/6.835/miniproject4/early_fusion.png)
+
+![](/Users/will/Dropbox/MIT/6.835/miniproject4/late_fusion.png)**Question 8**: Implement the function `chmm = make_chmm(N,Q,X)` (located inside trainCHMM.m) that generates the graph structure of a coupled HMM. Explain your implementation with pseudocode in your writeup. Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function trainCHMM.m.
 
-**Question 9**: Follow the step in Part 3 and run an experiment us- ing coupled HMM. What is the best classification accuracy you obtained using coupled HMM? What parameter values did you validate and what was your strategy for finding the best parameter value?
-￼￼￼￼￼￼￼￼￼
+**Question 9**: Follow the step in Part 3 and run an experiment using coupled HMM. What is the best classification accuracy you obtained using coupled HMM? What parameter values did you validate and what was your strategy for finding the best parameter value?
+[Coupled HMM] accuracy=0.766667 (H=[8 8],G=[1 1])￼￼￼￼￼￼￼￼￼
 **Question 10**: Submit and interpret the confusion matrix you obtained, comparing to the confusion matrices you obtained so far. Does coupled HMM tend to perform better than the early/late fusion HMMs? Why do you think it did (or did not)?
 
+![](/Users/will/Dropbox/MIT/6.835/miniproject4/coupled.png)
 **Question 11**: Describe the differences between coupled HMM and early/late fusion HMMs in terms of the underlying assumptions, how the classifiers are trained and then used to test new samples.
 **Question 12**: What are the two assumptions that a co-training algorithm makes? In the context of the NATOPS dataset, do those assumptions make sense?
 
@@ -50,7 +73,7 @@ Co-training algorithms are algorithms that employ more than one observable varia
 
 2. Sufficiency. Each view must be sufficient to accurately classify the data on its own. That way, each of the views can generate labels from a set of unlabeled training data using its own highest-confidence classifications, then train the other view using this newly-labeled data.
 
-These assumptions seem fairly logical for this problem. Consulting the confusion diagrams for the body-only and hand-only classifiers, their mistakes don't seem to overlap most of the time. The body HMM, for example, frequently labels gesture 4 as gesture 3, but the hand HMM can determine conclusively that gesture 4 is not gesture 3. While neither of them has especially good accuracy for gesture 4, they don't have the *same* problems. They also seem to meet the sufficiency requirement, according to the individual accuracies of the  (0.606250 and 0.642708).
+These assumptions seem fairly logical for this problem. Consulting the confusion diagrams for the body-only and hand-only classifiers, their mistakes don't seem to overlap most of the time. The body HMM, for example, frequently labels gesture 4 as gesture 3, but the hand HMM can determine conclusively that gesture 4 is not gesture 3. While neither of them has especially good accuracy for gesture 4, they don't have the *same* problems. They also seem to meet the sufficiency requirement, according to the individual accuracies of the HMMs (0.606250 and 0.642708).
 **Question 13**: Implement trainCoHMM.m that performs co-training of HMMs. We have provided you with pseudocode for implementing co-training algorithms (Figure 3). Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function experiment cotrain_hmm.m.
 
 **Question 14**: Follow the step in Part 4 and run an experiment using co-training HMM. What is the best classification accuracy you obtained using co-training HMM? What parameter values did you try out and what was your strategy for finding the best parameter value? Submit and interpret the confusion matrix you obtained.

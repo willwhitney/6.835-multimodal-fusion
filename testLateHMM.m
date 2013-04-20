@@ -20,21 +20,6 @@ function [ stat ] = testLateHMM(seqs, labels, hmm, featureMap, weightsMV)
 % in weightsMV, compute the weighted average of the two log-likelihoods, 
 % obtain predicted labels by taking the max of log-likelihoods of each sample, 
 % finally compute the accuracy of the estimates. 
-%{
-    function evaluateCombo(bIndex, hIndex, wIndex, sIndex)
-        stat{sIndex}.Ystar = zeros(1, numel(seqs));
-        stat{sIndex}.Ytrue = labels;
-        stat{sIndex}.accuracy = 0;
-        for sampleIndex = 1:numel(seqs)
-            if bodyLL{sampleIndex}(bIndex) > handLL{sampleIndex}(hIndex)
-                stat{sIndex}.Ystar = bodyYstar{sampleIndex}(bIndex);
-            else
-                stat{sIndex}.Ystar = handYstar{sampleIndex}(hIndex);
-            end
-            
-        end
-    end
-%}
 
     body_seqs = cellfun(@(x) x(featureMap{1},:), seqs, 'UniformOutput', false);
     hand_seqs = cellfun(@(x) x(featureMap{2},:), seqs, 'UniformOutput', false);
