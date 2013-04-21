@@ -14,7 +14,7 @@ For both of these tests, all combinations of the parameters `H = {8, 4, 12}` and
 
 ![](/Users/will/Dropbox/MIT/6.835/miniproject4/body_only.png)
 
-For the body-only interpretation, gesture 1 was the most misinterpreted, as almost 70% of the time it was predicted as gesture 2. Gestures 5 and 6 were also thoroughly confused, with gesture 6 being interpreted more than half of the time as gesture 5. Gesture 5 itself was only barely more than half the time correctly interpreted. While gestures 3 and 4 were sometimes confused with each other, they were more distinguishable than the other confused pairs.
+For the body-only interpretation, gesture 1 was the most misinterpreted, as almost 70% of the time it was predicted as gesture 2. Gestures 5 and 6 were also thoroughly confused, with gesture 6 being interpreted more than half of the time as gesture 5. Gesture 5 itself was only barely more than half the time correctly interpreted. While gestures 3 and 4 were sometimes confused with each other, they were more distinguishable than the other confused pairs.z
 
 From examining the diagrams, these confused pairs of gestures make perfect sense. These pairs have the same arm movements, and differ only in the hand position used for the gesture. The fact that gestures 3 and 4 are usually distinguishable is actually somewhat surprising, and probably reflects a difference in the arm movements caused by the wrist orientation change. Perhaps the signaler does not bring his hands as close together when the thumbs are pointing inward, towards each other.
 
@@ -67,14 +67,41 @@ Most powerful to my mind is the results for gestures 1 and 2, especially gesture
 
 The performance has improved so much because the pairs of gestures that the body HMM confuses are almost entirely not the pairs that the hand HMM confuses, and each of the HMMs independently puts the correct gesture at least in second place. When the signals are averaged, the unsynchronized noise is averaged out, and the real signal comes through strong.**Question 8**: Implement the function `chmm = make_chmm(N,Q,X)` (located inside trainCHMM.m) that generates the graph structure of a coupled HMM. Explain your implementation with pseudocode in your writeup. Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function trainCHMM.m.
 
-
+My implementation of `chmm = make_chmm(N,Q,X)` is a modification of the `mk_chmm` function included with the BNT library. The `mk_dbn` function allows you to describe the high-level flow of data between time and nodes quite concisely without having to worry about implementation details.
+
+	Goal: create N hidden nodes, with an observed node for each. Each of the hidden nodes can take on one of N val Q[1…N] values, and each of the observed ones shall produce a vector of length X[1…N].
+	
+	Define the indices of the hidden nodes to be [1 … N] and those of the observed nodes to be [1 + N … 2N].
+	
+	Define intra-slice connections between each of the hidden nodes and its observed node.
+	Define inter-slice connections between each of the hidden nodes at time t and each of the hidden nodes at time t + 1.
+	
+	Specify that nodes [1 …, i, …, N] can take on Q[i] values, and that nodes [N + 1 …, j, …, 2N] can take on X[j] values.
+	
+	Instantiate a coupled HMM via mk_dbn.
+	
+	Set the conditional probability distribution of hidden nodes to be tabular.
+	Set the conditional probability distribution of observed nodes to be Gaussian.
+	
+	Return the coupled HMM.
+
 **Question 9**: Follow the step in Part 3 and run an experiment using coupled HMM. What is the best classification accuracy you obtained using coupled HMM? What parameter values did you validate and what was your strategy for finding the best parameter value?
-[Coupled HMM] accuracy=0.766667 (H=[8 8],G=[1 1])￼￼￼￼￼￼￼￼￼
+
+The best accuracy I obtained was 0.766667 with parameters `H = [8 8], G = [1 1]`. These values were determined using the grid search included in `run.m`, which tested values of `H` in `{[4 4],[8 8],[12 12]}`.￼￼￼￼￼￼￼￼￼
 **Question 10**: Submit and interpret the confusion matrix you obtained, comparing to the confusion matrices you obtained so far. Does coupled HMM tend to perform better than the early/late fusion HMMs? Why do you think it did (or did not)?
 
 ![](/Users/will/Dropbox/MIT/6.835/miniproject4/coupled.png)
+
+While the coupled HMM performed better than either of the unimodal HMMs alone, it performed rather worse than either of the fusion techniques. In particular, it proved significantly poorer at clarifying situations with multi-pair confusion, really the entire gesture 1-4 area. It did not demonstrate the same discriminating power in cases where each modality would be confused, but in a different pairing, that so impressed me about late fusion. Certainly given its rather extreme computational requirements, this was not a good fit for the data.
+
+I believe this is because the coupled HMM is inherently designed for more complex systems than the one we're actually examining now. Where fusion can simply take the best information from various sources, coupled HMMs are intended to take into account longer-timebase correlations and complex memories and interrelationships than traditional HMMs are. As the system being modeled was actually a very good fit for traditional Markovian assumptions, we did not reap the benefits of these capabilities.
 **Question 11**: Describe the differences between coupled HMM and early/late fusion HMMs in terms of the underlying assumptions, how the classifiers are trained and then used to test new samples.
-**Question 12**: What are the two assumptions that a co-training algorithm makes? In the context of the NATOPS dataset, do those assumptions make sense?
+
+Coupled HMMs, while they may look similar to fusion HMMs, are actually entirely different beasts. They rely on the ideas of cross-informing and higher-order information and memory. In situations where the changes in one modality are likely to have some predictive power on the other modality, or where there are time-based processes working on a higher order scale than a single frame, coupled HMMs may work very well.
+
+Fusion HMMs simply try to weigh and combine data from multiple sources; coupled HMMs look for higher-order patterns and behavior across time and the data sources.
+
+A coupled HMM is one larger machine model stitched together out of smaller ones, where each smaller model is fed the data for its own modality while communicating from timestep to timestep with the other nodes. This configuration, used for both training and testing, is more complicated than that of either of the fusion methods, which either just combine the data at the beginning or the answers at the end.**Question 12**: What are the two assumptions that a co-training algorithm makes? In the context of the NATOPS dataset, do those assumptions make sense?
 
 Co-training algorithms are algorithms that employ more than one observable variable about the data, in this case the hand data and the body data. These algorithms rely on the idea that these different views into the data can correct one another's ambiguity, and that each of the views is itself able to classify the data. More formally, the two assumptions of co-training are:
 
@@ -87,10 +114,10 @@ These assumptions seem fairly logical for this problem. Consulting the confusion
 
 See included code.
 **Question 14**: Follow the step in Part 4 and run an experiment using co-training HMM. What is the best classification accuracy you obtained using co-training HMM? What parameter values did you try out and what was your strategy for finding the best parameter value? Submit and interpret the confusion matrix you obtained.
-[Co-train HMM] accuracy=0.755208 (H=[8 8],G=[2 2],W=[0.20 0.80])
+My best accuracy was 0.755208 with parameters `H = [8 8], G = [2 2], W = [0.20 0.80]`. I tried parameter values `H = [12 8], G = [1 2]` first, thinking that the optimal parameters for individual performance might work well for co-training. When that didn't work as well as I'd hoped, I tried a grid search on `HMV = {[8 8],[12 12]}` and `GMV = {[2 2],[3 3]}`. This worked fairly well and gave me my results.
 ![](/Users/will/Dropbox/MIT/6.835/miniproject4/cotraining.png)
 
-
+This confusion matrix indicates what we could have predicted ahead of time: the co-training HMM, while great at extracting information in some situations (especially gesture 4, which was especially weak for other HMMs), can be misled by outliers that are confident in their mistakes. Hence why gesture 6 is so uncertain; while the hand HMM does very well on gesture 6, the body HMM is majority incorrect on it, and was able to undermine the hand HMM by training it away from accuracy. A similar result occurred in gestures 1 and 2.
 
 
 
