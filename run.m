@@ -161,6 +161,9 @@ fprintf('[Coupled HMM] accuracy=%f (H=[%d %d],G=[%d %d])\n', ...
 
 
 %% Part 4: Co-training HMM
+HMV = {[8 8],[12 12]}; 
+GMV = {[2 2],[3 3]};
+
 R.cotrain = {};
 for i=1:numel(HMV)
     for j=1:numel(GMV)

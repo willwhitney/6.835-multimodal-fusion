@@ -3,6 +3,7 @@
 % R = experiment_early_hmm(D, params)
 
 function R = experiment_early_hmm(D, params)
+    params
     % Train model    
     hmm = trainHMM( D.seqs(D.split.train), D.labels(D.split.train), params);
     

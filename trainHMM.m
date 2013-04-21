@@ -3,11 +3,12 @@
 % [ hmm ] = trainHMM( seqs, labels, params )
 
 function [ hmm ] = trainHMM( seqs, labels, params )
+    
     RandStream.setGlobalStream(...
         RandStream('mt19937ar', 'seed', params.randSeed));
 
-    Q = params.nbHiddenStates;
-    M = params.nbGaussMixtures;
+    Q = params.nbHiddenStates
+    M = params.nbGaussMixtures
     
     Y = cellfun(@(x) mode(x), labels);
     unique_Y = unique(Y);

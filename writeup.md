@@ -2,8 +2,6 @@ Will Whitney
 
 # Multimodal Signal Fusion Using HMMs
 
-## Unimodal Gesture Recognition
-
 **Question 1**: From the experiments using body features (Part 1a) and hand features (Part 1b), what are the best classification accuracies you obtained? What parameter values did you validate and what was your strategy for finding the best parameter value?
 
 Using body features, I obtained a classification accuracy of 0.606250 with parameters `H=12, G=1`. I used the grid search method given in `run.m` to select this parameters.
@@ -31,7 +29,7 @@ Confusion between gestures 4 and 2, and gestures 3 and 1, makes perfect sense; t
 
 The early fusion HMM achieved an accuracy of 0.872917 with the parameters `H = 8` and `G = 1`. I found this value using the grid search method implemented in `run.m`, which tested `H = {8, 4, 12}` and `G = {1, 3}`. 
 
-**Question 4**: Implement testLateHMM.m to perform late fusion, and explain your implementation with pseudocode in your writeup. Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function experiment late hmm.m.
+**Question 4**: Implement testLateHMM.m to perform late fusion, and explain your implementation with pseudocode in your writeup. Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function experiment_late_hmm.m.
 
 	Given:
 	- the data, `seqs`
@@ -45,19 +43,30 @@ The early fusion HMM achieved an accuracy of 0.872917 with the parameters `H = 8
 	
 	For each weighting in `weightsMV`:
 		For each sample in `seqs`:
-			Compute the weighted average of the likelihoods given by body and hand for each of the six possible interpretations 
+			Compute the weighted average of the likelihoods given by body- and hand-HMMs for each of the six possible interpretations 
 			Select the most likely interpretation and store it in `stat`
 			
-		Determine the percentage of 
+		Determine the percentage of the highest-probability guesses that match the ground truths in `labels` and store it in `stat` along with the guesses and the ground truths.
 			
-	
+	**Question 5**: Follow the steps in Part 2b. What is the best classification accuracy you can get using late fusion HMM? What parameter values did you validate and what was your strategy for finding the best parameter value? Which weight value tends to give you the best performance in terms of the classification accuracy? Why do you think that weight value give the best result?
 
-**Question 5**: Follow the steps in Part 2b. What is the best classification accuracy you can get using late fusion HMM? What parameter values did you validate and what was your strategy for finding the best parameter value? Which weight value tends to give you the best performance in terms of the classification accuracy? Why do you think that weight value give the best result?
-[Late HMM] accuracy=0.846875 (H=[12 8],G=[3 2],W=[0.50 0.50])**Question 6**: Describe the differences between early and late fusion algorithms in terms of the underlying assumptions, how the classifiers are trained and then used to test new samples.
-**Question 7**: Submit and interpret the two confusion matrices you obtained (both from early fusion and late fusion). Which approach (early versus late) performed better? Pick the confusion matrix that performed better and compare it to the two confusion matrices you obtained in Question 2. What differences do you see? Do you see a better classification accuracy on those gesture pairs that were confused the most in unimodal approach? Why do you think the performance has improved?
-![](/Users/will/Dropbox/MIT/6.835/miniproject4/early_fusion.png)
+I obtained a classification accuracy of 0.846875 with parameters `H=[12 8], G=[3 2], W=[0.50 0.50]`. I used the grid search method given in `run.m` to select this parameters.A 50/50 weighting seems to give me the best performance here. I would theorize this is because the two independent classifiers have very similar accuracy rates, and so neither one is strongly preferred over the other. If this weighting had been very unbalanced, it would have indicated that one medium actually provided far better information than the other.**Question 6**: Describe the differences between early and late fusion algorithms in terms of the underlying assumptions, how the classifiers are trained and then used to test new samples.
 
-![](/Users/will/Dropbox/MIT/6.835/miniproject4/late_fusion.png)**Question 8**: Implement the function `chmm = make_chmm(N,Q,X)` (located inside trainCHMM.m) that generates the graph structure of a coupled HMM. Explain your implementation with pseudocode in your writeup. Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function trainCHMM.m.
+In an early fusion algorithm, there's a basic assumption that the data are in fact fuse-able in the raw; that is, they are aligned in time and in information carried. For an early fusion strategy to be successful, the sets of data need to be very similar to one another. If there is a time offset or uncertainty between them, or a mismatch in temporal correlation between the two modes, early fusion will provide no gains. Furthermore, early fusion works best when the two modalities have a fixed relative reliability; if one modality is sometimes effective and other times not, early fusion doesn't provide the flexibility to cope intelligently with the shifts.
+
+Early fusion simply concatenates the data from the two sources and trains a single classifier on the conjoined data. The same methodology is employed in testing; simply combine the data from all sources, then see how the predictions of the classifier line up with the ground truth.
+
+Late fusion, on the other hand, is more flexible about the types of data employed and their relative strengths and weaknesses. While it can't provide the depth of data cross-pollination that early fusion can, it allows the system to have deeper knowledge of the semantics of the data at the time of fusion. For example, a system could fuse high-level semantic events that did not line up perfectly in time by seeing them as semantic occurrences which are related. Furthermore, when one modality has a variable reliability, that reliability can be assessed and weighted independently, improving the system's durability.
+
+Practically speaking, late fusion involves training two classifiers independently, then combining their results intelligently. This might involve heavier weighting for the more reliable modality or detection of offset events, such as conversation about something that is yet to come. Late fusion works well with data sources that are more different from one another than early fusion does.**Question 7**: Submit and interpret the two confusion matrices you obtained (both from early fusion and late fusion). Which approach (early versus late) performed better? Pick the confusion matrix that performed better and compare it to the two confusion matrices you obtained in Question 2. What differences do you see? Do you see a better classification accuracy on those gesture pairs that were confused the most in unimodal approach? Why do you think the performance has improved?![](/Users/will/Dropbox/MIT/6.835/miniproject4/early_fusion.png)
+![](/Users/will/Dropbox/MIT/6.835/miniproject4/late_fusion.png)On average, early fusion performed better, giving a slightly higher accuracy. However, late fusion has a more balanced result; that is, the variance of the likelihood of a correct identification is lower. Early fusion does amazingly well on some gestures, but significantly worse on some others, whereas late fusion has fairly reliable performance across all the gestures. As such, I would pick late fusion as the winner. 
+
+Late fusion is a drastic improvement over either of the single-modality methods. It seems to have taken the best from each HMM and improved upon it. As it's a simple 50/50 average of the two precursor results, it doesn't do anything unexpected, but the results are still quite striking. 
+
+Most powerful to my mind is the results for gestures 1 and 2, especially gesture 1. Neither HMM on its own had a remotely good identification rate for gesture 1; the body HMM even identifies it a majority of the time as gesture 2. However, since their confusion was with *different* red herrings, that confusion gets averaged out entirely, leading to a solid 0.85 identification rate for gesture 1. This is a far better result than the complete confusion between gestures 1 and 2 that the body HMM exhibited.
+
+The performance has improved so much because the pairs of gestures that the body HMM confuses are almost entirely not the pairs that the hand HMM confuses, and each of the HMMs independently puts the correct gesture at least in second place. When the signals are averaged, the unsynchronized noise is averaged out, and the real signal comes through strong.**Question 8**: Implement the function `chmm = make_chmm(N,Q,X)` (located inside trainCHMM.m) that generates the graph structure of a coupled HMM. Explain your implementation with pseudocode in your writeup. Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function trainCHMM.m.
+
 
 **Question 9**: Follow the step in Part 3 and run an experiment using coupled HMM. What is the best classification accuracy you obtained using coupled HMM? What parameter values did you validate and what was your strategy for finding the best parameter value?
 [Coupled HMM] accuracy=0.766667 (H=[8 8],G=[1 1])￼￼￼￼￼￼￼￼￼
@@ -76,9 +85,10 @@ Co-training algorithms are algorithms that employ more than one observable varia
 These assumptions seem fairly logical for this problem. Consulting the confusion diagrams for the body-only and hand-only classifiers, their mistakes don't seem to overlap most of the time. The body HMM, for example, frequently labels gesture 4 as gesture 3, but the hand HMM can determine conclusively that gesture 4 is not gesture 3. While neither of them has especially good accuracy for gesture 4, they don't have the *same* problems. They also seem to meet the sufficiency requirement, according to the individual accuracies of the HMMs (0.606250 and 0.642708).
 **Question 13**: Implement trainCoHMM.m that performs co-training of HMMs. We have provided you with pseudocode for implementing co-training algorithms (Figure 3). Note that you must follow the type signature of the function, as the function’s input and output parameters are used in the function experiment cotrain_hmm.m.
 
+See included code.
 **Question 14**: Follow the step in Part 4 and run an experiment using co-training HMM. What is the best classification accuracy you obtained using co-training HMM? What parameter values did you try out and what was your strategy for finding the best parameter value? Submit and interpret the confusion matrix you obtained.
-
-
+[Co-train HMM] accuracy=0.755208 (H=[8 8],G=[2 2],W=[0.20 0.80])
+![](/Users/will/Dropbox/MIT/6.835/miniproject4/cotraining.png)
 
 
 
